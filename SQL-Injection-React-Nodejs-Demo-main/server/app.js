@@ -10,6 +10,12 @@ app.use(session({
 	secret: 'secret',
 	resave: true,
 	saveUninitialized: true
+
+    cookie: {
+        secure: true, // Ensure cookies are only sent over HTTPS
+        httpOnly: true, // Mitigate the risk of XSS attacks by preventing access to cookies via JavaScript
+    },
+
 }));
 
 app.use(express.json());
@@ -25,6 +31,31 @@ const db = mysql.createConnection({
 });
 
 const router = express.Router();
+
+router.post('/login', function(req, res, next) {
+    const username = req.body.username;
+    const password = req.body.password;
+  
+    // Use parameterized query to prevent SQL injection
+    const query = 'SELECT * FROM users WHERE username = ? AND password = ?';
+    
+    db.query(query, [username, password], (err, result) => {
+      if (err) {
+        res.status(500).send({ message: 'Internal server error' });
+        console.error(err);
+      } else {
+        if (result.length > 0) {
+          res.status(200).send(result);
+        } else {
+          res.status(401).send({ message: 'Wrong username/password combination!' });
+        }
+      }
+    });
+  });
+
+
+
+  
 
 router.post("/getdetails", (req, res) => {
     const username = req.body.username;
